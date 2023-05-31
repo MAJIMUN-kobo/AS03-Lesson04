@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions.Must;
 
 public class TurnManager : MonoBehaviour
 {
@@ -86,6 +87,12 @@ public class TurnManager : MonoBehaviour
 
         turnCount++; // ターン数を増やします。
 
+        // P1を初期化
+        player[0].isWinner = false;
+
+        // P2を初期化
+        player[1].isWinner = false;
+
         // フェイズを次に進める
         phasePattern = PHASE_HAND_SELECT_P1;
     }
@@ -161,14 +168,52 @@ public class TurnManager : MonoBehaviour
     {
         Debug.Log("じゃんけんの判定を行います。");
 
-        // フェイズを次に進める
-        phasePattern = PHASE_DAMAGE_CALC;
+        // 1Pが勝つパターン
+        if (player[0].jankenHand == Player.HAND_GU && player[1].jankenHand == Player.HAND_CHOKI
+            || player[0].jankenHand == Player.HAND_CHOKI && player[1].jankenHand == Player.HAND_PA
+            || player[0].jankenHand == Player.HAND_PA && player[1].jankenHand == Player.HAND_GU)
+        {
+            Debug.Log(player[0].name + " の勝ち！！");
+
+            player[0].isWinner = true;      // 勝利フラグを立てる
+
+            // フェイズを次に進める
+            phasePattern = PHASE_DAMAGE_CALC;
+        }
+        // 2Pが勝つパターン
+        else if (player[1].jankenHand == Player.HAND_GU && player[0].jankenHand == Player.HAND_CHOKI
+            || player[1].jankenHand == Player.HAND_CHOKI && player[0].jankenHand == Player.HAND_PA
+            || player[1].jankenHand == Player.HAND_PA && player[0].jankenHand == Player.HAND_GU)
+        {
+            Debug.Log(player[1].name + " の勝ち！！");
+
+            player[1].isWinner = true;      // 勝利フラグを立てる
+
+            // フェイズを次に進める
+            phasePattern = PHASE_DAMAGE_CALC;
+        }
+        else
+        {
+            Debug.Log("おあいこ...");
+
+            // フェイズを手の選択に戻す
+            phasePattern = PHASE_HAND_SELECT_P1;
+        }
     }
 
     // === ダメージ計算
     public void DamageCalc()
     {
         Debug.Log("ダメージ計算を行います。");
+
+        if (player[0].isWinner == true)
+        {   // P1が勝ち、P2にダメージを与える
+            player[1].hitPoint -= 1;
+        }
+        else if (player[1].isWinner == true)
+        {   // P2が勝ち、P1にダメージを与える
+            player[0].hitPoint -= 1;
+        }
 
         // フェイズを次に進める
         phasePattern = PHASE_BATTLE_RESULT;
@@ -177,7 +222,14 @@ public class TurnManager : MonoBehaviour
     // === バトルリザルト
     public void Result()
     {
-        Debug.Log("＊＊＊さんの勝ちです。ーーーさんに　???　のダメージ！");
+        if (player[0].isWinner == true)
+        {   // P1の勝利表示
+            Debug.Log(player[0].name + "さんの勝ちです。" + player[1].name + "さんに 1 のダメージ！");
+        }
+        else if (player[1].isWinner == true)
+        {   // P2の勝利表示
+            Debug.Log(player[1].name + "さんの勝ちです。" + player[0].name + "さんに 1 のダメージ！");
+        }
 
         // フェイズを次に進める
         phasePattern = PHASE_ENTRY;
@@ -190,5 +242,9 @@ public class TurnManager : MonoBehaviour
     public void OnGUI()
     {
         GUILayout.Label("Turn >>> " + turnCount);
+
+        // HP表示
+        GUILayout.Label("Player1 HP >>> " + player[0].hitPoint);
+        GUILayout.Label("Player2 HP >>> " + player[1].hitPoint);
     }
 }
